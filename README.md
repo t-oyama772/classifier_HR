@@ -2,12 +2,12 @@
 ***
 ***
 
-当リポジトリは退職予測用MLの実行環境です。
+当リポジトリは退職予測用MLの実行環境
 
 　　
 ## Directory
 ***
-ディレクトリ構成は下記の通りです。
+ディレクトリ構成は下記の通り
 ```
 classifier_HR/
         ┣ bin/        # 実行ファイルの配置場所
@@ -20,9 +20,9 @@ classifier_HR/
 　　
 ## Usage
 ***
-実行方法は下記の通りです。
+実行方法は下記の通り
 ```
 cd classifier_HR/bin
 python classifier_HR.py
 ```
-※python3環境が前提になります
+※python3環境が前提
