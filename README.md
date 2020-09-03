@@ -54,5 +54,5 @@ python hr_pred_api.py
 ```
 ```
 cd classifier_HR/api
-hr_pred_api_test.py
+python hr_pred_api_test.py
 ```
