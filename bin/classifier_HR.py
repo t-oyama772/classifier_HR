@@ -149,7 +149,7 @@ def main():
         logger.info(pipe_name + ': Fitting Done')
         scores[pipe_name, 'train'] = roc_auc_score(y_train.as_matrix().ravel(), pipeline.predict(X_train))
         scores[pipe_name, 'test'] = roc_auc_score(y_test.as_matrix().ravel(), pipeline.predict(X_test))
-        joblib.dump(pipeline, '../model/'+ model_name + '_' + pipe_name  + '_' + '.pkl')
+        joblib.dump(pipeline, '../model/'+ model_name + '_' + pipe_name + '.pkl')
 
     # ----モデル用データ（under_sampling）のmodeling----
     scores_under = {}
@@ -158,7 +158,7 @@ def main():
         logger.info(pipe_name + ': Fitting Done (under_sampling)')
         scores_under[pipe_name, 'train_under'] = roc_auc_score(y_train_under, pipeline.predict(X_train_under))
         scores_under[pipe_name, 'test'] = roc_auc_score(y_test.as_matrix().ravel(), pipeline.predict(X_test))
-        joblib.dump(pipeline, '../model/'+ model_name + '_under_' + pipe_name  + '_' + '.pkl')
+        joblib.dump(pipeline, '../model/'+ model_name + '_' + pipe_name + '_under' + '.pkl')
 
     # ----モデル用データ（over_sampling）のmodeling----
     scores_over = {}
@@ -167,12 +167,35 @@ def main():
         logger.info(pipe_name + ': Fitting Done (over_sampling)')
         scores_over[pipe_name, 'train_over'] = roc_auc_score(y_train_over, pipeline.predict(X_train_over))
         scores_over[pipe_name, 'test'] = roc_auc_score(y_test.as_matrix().ravel(), pipeline.predict(X_test))
-        joblib.dump(pipeline, '../model/'+ model_name + '_over_' + pipe_name  + '_' + '.pkl')
+        joblib.dump(pipeline, '../model/'+ model_name + '_' + pipe_name + '_over' + '.pkl')
 
     logger.info('-----scores------')
     logger.info(pd.Series(scores).unstack())
     logger.info(pd.Series(scores_under).unstack())
     logger.info(pd.Series(scores_over).unstack())
+
+    # choice best model
+    s1 = pd.Series(scores).unstack().set_index(pd.Series(scores).unstack().index.astype(str) + '_')
+    s2 = pd.Series(scores_under).unstack().set_index(pd.Series(scores_under).unstack().index.astype(str) + '_under')
+    s3 = pd.Series(scores_over).unstack().set_index(pd.Series(scores_over).unstack().index.astype(str) + '_over')
+
+    s_all = pd.concat([s1, 
+                       s2.rename(columns={'train_under': 'train'}), 
+                       s3.rename(columns={'train_over': 'train'})])
+    
+    logger.info('all scores')
+    logger.info(s_all)
+
+    col1 = s_all["test"]
+    col2 = s_all["train"]
+    rank_all = (col1.rank(ascending=False)+col2.rank(ascending=False)).rank(method='first')
+
+    logger.info('all scores rank')
+    logger.info(rank_all)
+
+    #rank 1 choice
+    logger.info('best model pks : ../model/'+ model_name + '_' + rank_all[rank_all == 1].index[0] + '.pkl')
+    best_model_pkl = '../model/'+ model_name + '_' + rank_all[rank_all == 1].index[0] + '.pkl'
 
     # preprocessing-4: preprocessing of a score data along with a model dataset（スコア用データの前処理）
 
@@ -246,7 +269,7 @@ def main():
     Xs_exp_selected = Xs_exp.loc[:, X_ohe_columns[selector.support_]] # 学習済みのRFECVクラスのインスタンス（selector）を使用し選択された特徴量のインデックスを指定
 
     # スコア用データのscoring
-    clf = joblib.load('../model/' + model_name + '_' + 'under_gb'  + '_' + '.pkl')
+    clf = joblib.load(best_model_pkl)
     score = pd.DataFrame(clf.predict_proba(Xs_exp_selected)[:,1], columns=['pred_score']) # スコア用データのscoring
     IDs.join(score).to_csv('../data/' +  model_name + '_' + file_score + '_with_pred.csv', index=False)
 
