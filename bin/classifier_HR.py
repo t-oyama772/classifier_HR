@@ -3,7 +3,8 @@ import numpy as np
 import warnings
 import sys
 from pathlib import Path
-from sklearn.preprocessing import StandardScaler,Imputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
@@ -12,10 +13,14 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.feature_selection import RFECV
-from sklearn.externals import joblib
+from sklearn.model_selection import train_test_split
+import joblib
 from sklearn.metrics import roc_auc_score
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from lib.logger import get_logger
+from collections import Counter
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.over_sampling import RandomOverSampler, SMOTE
 
 def main():
 
@@ -86,8 +91,6 @@ def main():
     logger.info('-----------after one-hot encoding----------------------')
     logger.info(X_ohe.head(5))
 
-    from sklearn.impute import SimpleImputer
-
     # preprocessing-2: null imputation （欠損値対応（平均値で置換される））
     imp = SimpleImputer()
     imp.fit(X_ohe)
@@ -101,14 +104,12 @@ def main():
 
     # preprocessing-3: feature selection （次元圧縮（特徴量削減））
     selector = RFECV(estimator=RandomForestClassifier(random_state=0),step=0.05)
-    selector.fit(X_ohe, y.as_matrix().ravel())
+    selector.fit(X_ohe, y.values.ravel())
     X_ohe_selected = selector.transform(X_ohe)
     X_ohe_selected = pd.DataFrame(X_ohe_selected, columns=X_ohe_columns[selector.support_])
     logger.info('-----after feature selection------')
     logger.info(X_ohe_selected.shape)
     logger.info(X_ohe_selected.head(5))
-
-    from sklearn.model_selection import train_test_split
 
     # Holdout
     X_train,X_test,y_train,y_test = train_test_split(X_ohe_selected,
@@ -118,9 +119,6 @@ def main():
                                                     shuffle=True)
 
     # 不均衡データ対応
-    from collections import Counter
-    from imblearn.under_sampling import RandomUnderSampler
-    from imblearn.over_sampling import RandomOverSampler, SMOTE
     rus = RandomUnderSampler(random_state=0)
     ros = RandomOverSampler(random_state=0)
     smt = SMOTE(random_state=0)
@@ -145,10 +143,10 @@ def main():
     # ----モデル用データのmodeling----
     scores = {}
     for pipe_name, pipeline in pipelines.items():
-        pipeline.fit(X_train, y_train.as_matrix().ravel())
+        pipeline.fit(X_train, y_train.values.ravel())
         logger.info(pipe_name + ': Fitting Done')
-        scores[pipe_name, 'train'] = roc_auc_score(y_train.as_matrix().ravel(), pipeline.predict(X_train))
-        scores[pipe_name, 'test'] = roc_auc_score(y_test.as_matrix().ravel(), pipeline.predict(X_test))
+        scores[pipe_name, 'train'] = roc_auc_score(y_train.values.ravel(), pipeline.predict(X_train))
+        scores[pipe_name, 'test'] = roc_auc_score(y_test.values.ravel(), pipeline.predict(X_test))
         joblib.dump(pipeline, '../model/'+ model_name + '_' + pipe_name + '.pkl')
 
     # ----モデル用データ（under_sampling）のmodeling----
@@ -157,7 +155,7 @@ def main():
         pipeline.fit(X_train_under, y_train_under)
         logger.info(pipe_name + ': Fitting Done (under_sampling)')
         scores_under[pipe_name, 'train_under'] = roc_auc_score(y_train_under, pipeline.predict(X_train_under))
-        scores_under[pipe_name, 'test'] = roc_auc_score(y_test.as_matrix().ravel(), pipeline.predict(X_test))
+        scores_under[pipe_name, 'test'] = roc_auc_score(y_test.values.ravel(), pipeline.predict(X_test))
         joblib.dump(pipeline, '../model/'+ model_name + '_' + pipe_name + '_under' + '.pkl')
 
     # ----モデル用データ（over_sampling）のmodeling----
@@ -166,7 +164,7 @@ def main():
         pipeline.fit(X_train_over, y_train_over)
         logger.info(pipe_name + ': Fitting Done (over_sampling)')
         scores_over[pipe_name, 'train_over'] = roc_auc_score(y_train_over, pipeline.predict(X_train_over))
-        scores_over[pipe_name, 'test'] = roc_auc_score(y_test.as_matrix().ravel(), pipeline.predict(X_test))
+        scores_over[pipe_name, 'test'] = roc_auc_score(y_test.values.ravel(), pipeline.predict(X_test))
         joblib.dump(pipeline, '../model/'+ model_name + '_' + pipe_name + '_over' + '.pkl')
 
     logger.info('-----scores------')
@@ -257,7 +255,7 @@ def main():
     logger.info('-----columns that only exist in the score: %s ------' % diff2)
 
     # re-order the score data columns （スコア用データの変数の並び順の制御）
-    Xs_exp = Xs_exp.reindex_axis(X_ohe_columns, axis=1)
+    Xs_exp = Xs_exp.reindex(X_ohe_columns, axis=1)
 
     logger.info('-----check null exists------')
     logger.info(Xs_exp.isnull().any())
