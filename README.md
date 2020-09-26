@@ -37,22 +37,24 @@ classifier_HR/
 ## 実行方法
 ***
 実行方法は下記の通り  
-※python3環境が前提  
+※python3環境、pipenvインストール済が前提  
 
 ### 退職者予測AutoML
 ```
-cd classifier_HR/bin
-python classifier_HR.py
+git clone https://github.com/t-oyama772/classifier_HR.git
+cd classifier_HR
+pipenv install
+cd bin
+pipenv run python classifier_HR.py
 ```
-
 　　
 ### 学習済みモデルから予測値を返すAPI
 ターミナルを２つ起動し、それぞれで以下を実行
 ```
 cd classifier_HR/api
-python hr_pred_api.py
+pipenv run python hr_pred_api.py
 ```
 ```
 cd classifier_HR/api
-python hr_pred_api_test.py
+pipenv run python hr_pred_api_test.py
 ```

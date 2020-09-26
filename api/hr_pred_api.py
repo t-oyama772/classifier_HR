@@ -1,12 +1,12 @@
 from flask import Flask, request, jsonify, abort
 import pandas as pd
-from sklearn.externals import joblib
+import joblib
 from datetime import datetime
 import sys
 app = Flask(__name__)
 
 # load model
-model = joblib.load('../model/CLASSIFIER_001_under_gb_.pkl')
+model = joblib.load('../model/CLASSIFIER_001_rf_over.pkl')
 
 
 @app.route('/hr_pred_api/predict', methods=["POST"])
