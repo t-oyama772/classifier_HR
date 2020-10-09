@@ -5,15 +5,21 @@ FROM debian:10
 WORKDIR /usr/local
 
 # COPYでホストからファイルをイメージにコピー
+COPY uwsgi.ini uwsgi.ini
 COPY AutoML_exec.sh AutoML_exec.sh
 COPY startup.sh startup.sh
 
 # RUNでシェルコマンドを実行
 RUN apt-get update \
- && apt-get install -y curl git python3 pipenv uwsgi \
+ && apt-get install -y curl git python3 pipenv uwsgi uwsgi-plugin-python3 \
+ && useradd -r -s /bin/false uwsgiusr \
  && git clone --depth 1 https://github.com/t-oyama772/classifier_HR.git \
  && chmod 744 AutoML_exec.sh startup.sh \
  && ./AutoML_exec.sh
 
+RUN pip3 install flask
+RUN pip3 install sklearn
+RUN pip3 install pandas
+
 # コンテナ起動時のコマンド
-CMD ["./startup.sh"]
+CMD ["uwsgi", "--ini", "uwsgi.ini"]

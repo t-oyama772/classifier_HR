@@ -57,4 +57,14 @@ pipenv run python hr_pred_api.py
 ```
 cd classifier_HR/api
 pipenv run python hr_pred_api_test.py
+
+もしくは以下curlコマンド
+curl -X POST -H "Content-Type: application/json" -d '{"satisfaction_level":0.27, "last_evaluation":0.61, "number_project":3.0, "average_montly_hours":213.0, "time_spend_company":6.0, "salary_low":1.0}' localhost:9090/hr_pred_api/predict
+```
+
+### docker-composeで学習済みモデルから予測値を返すAPIを起動
+dockerとdocker-composeインストール済が前提
+```
+cd classifier_HR/
+docker-compose -f docker-compose.yaml up -d
 ```
