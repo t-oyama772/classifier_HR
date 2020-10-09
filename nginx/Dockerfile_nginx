@@ -1,0 +1,12 @@
+# FROMでイメージを指定
+FROM nginx:latest
+
+# docker containerがコマンドを開始するDirを指定
+WORKDIR /etc/nginx/conf.d
+
+# COPYでホストからファイルをイメージにコピー
+COPY default.conf default.conf
+
+# RUNでシェルコマンドを実行
+RUN apt-get update \
+ && apt-get install -y curl

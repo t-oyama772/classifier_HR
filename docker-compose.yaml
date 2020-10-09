@@ -1,0 +1,18 @@
+version: "3.7"
+services:
+  nginx:
+    build:
+      context: "./nginx"
+      dockerfile: "Dockerfile_nginx"
+    image: hoge_nginx
+    container_name: docker_compose_nginx
+    ports:
+      - "9090:80"
+  uwsgi:
+    build:
+      context: "./uwsgi"
+      dockerfile: "Dockerfile_uwsgi"
+    image: hoge_uwsgi
+    container_name: docker_compose_uwsgi
+    ports:
+      - "9091:5000"
